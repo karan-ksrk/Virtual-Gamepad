@@ -3,8 +3,6 @@ import json
 import vgamepad as vg
 import queue
 import threading
-import keyboard
-from functools import lru_cache
 
 gamepad = vg.VX360Gamepad()
 gamepad_x = 0
@@ -14,57 +12,32 @@ gamepad_y = 0
 message_queue = queue.Queue()
 touch_message_queue = queue.Queue()
 
+# Calibration values
+X_CALIBRATION = 0.12
+Y_THRESHOLD_LOW = 250
+Y_THRESHOLD_HIGH = 2000
 
-@lru_cache(maxsize=None)
+
 def control_gamepad(x, y, z):
-    x, y, z = (x / 10, y / 10, z / 10)
-    x = max(x + 0.12, -0.99)
-    # print to two decimal places
-    # print(f"x = {x:.2f}, y = {y:.2f}, z={z:.2f}")
-    # if y < -0.20:
-    # gamepad.left_trigger_float(value_float=(1 - y) / 2)
-    # else:
-    #     gamepad.right_trigger_float(value_float=y)
+    x /= 10
+    y /= 10
+    x = max(x + X_CALIBRATION, -0.99)
+
     gamepad.left_joystick_float(x_value_float=x, y_value_float=0)
-    # gamepad.right_trigger_float(value_float=0)
     gamepad.update()
-    # gamepad.left_trigger_float(value_float=0)
 
 
-@lru_cache(maxsize=None)
 def touch_control_keyboard(x, y, action):
-    if (action == "ACTION_DOWN" or "ACTION_MOVE") and y < 250:
-        if action == "ACTION_MOVE":
+    if action in ["ACTION_DOWN", "ACTION_MOVE"]:
+        if Y_THRESHOLD_LOW <= y <= Y_THRESHOLD_HIGH:
             pass
-        else:
-            # print("press s")
-            keyboard.press("s")
-    if (action == "ACTION_DOWN" or "ACTION_MOVE") and y > 2000:
-        if action == "ACTION_MOVE":
-            pass
-        else:
-            # print("press w")
-            keyboard.press("w")
-    if action == "ACTION_UP":
-        # print("release w")
-        keyboard.release("w")
-        keyboard.release("s")
-
-    # print("x = ", x, "y = ", y, "action = ", action)
-
-
-# @lru_cache(maxsize=None)
-# def touch_control_keyboard(x, y, action):
-#     if action in ["ACTION_DOWN", "ACTION_MOVE"]:
-#         if y < 250:
-#             keyboard.press("s")
-#         elif y > 2000:
-#             keyboard.press("w")
-#         else:
-#             keyboard.release("w")
-#             keyboard.release("s")
-
-#     # print("x = ", x, "y = ", y, "action = ", action)
+        elif y < Y_THRESHOLD_LOW:
+            gamepad.left_trigger_float(value_float=1)
+        elif y > Y_THRESHOLD_HIGH:
+            gamepad.right_trigger_float(value_float=1)
+    elif action == "ACTION_UP":
+        gamepad.left_trigger_float(value_float=0)
+        gamepad.right_trigger_float(value_float=0)
 
 
 class Sensor:
@@ -73,14 +46,11 @@ class Sensor:
         self.sensor_type = sensor_type
 
     def on_open(self, ws):
-        print(f"Connected to : {self.address}")
+        print(f"Connected to: {self.address}")
 
     def on_message(self, ws, message):
         values = json.loads(message)["values"]
-        z = values[0]
-        x = values[1]
-        y = values[2]
-        # print(f"x = {x:.2f}, y = {y:.2f}, z={z:.2f}")
+        x, y, z = values[1], values[2], values[0]
         message_queue.put((x, y, z))
 
     def on_error(self, ws, error):
@@ -113,13 +83,11 @@ class TouchSensor:
         self.sensor_type = sensor_type
 
     def on_open(self, ws):
-        print(f"Connected to : {self.address}")
+        print(f"Connected to: {self.address}")
 
     def on_message(self, ws, message):
         data = json.loads(message)
-
-        x, y = data["x"], data["y"]
-        action = data["action"]
+        x, y, action = data["x"], data["y"], data["action"]
         touch_message_queue.put((x, y, action))
 
     def on_error(self, ws, error):
@@ -165,6 +133,7 @@ if __name__ == "__main__":
         address="192.168.1.4:8080", sensor_type="android.sensor.accelerometer"
     )
     sensor.connect()
+
     touch_sensor = TouchSensor(address="192.168.1.4:8080", sensor_type="touchscreen")
     touch_sensor.connect()
 
