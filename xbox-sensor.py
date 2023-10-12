@@ -5,6 +5,8 @@ import queue
 import threading
 import keyboard
 from functools import lru_cache
+import time
+
 
 gamepad = vg.VX360Gamepad()
 gamepad_x = 0
@@ -33,38 +35,20 @@ def control_gamepad(x, y, z):
 
 @lru_cache(maxsize=None)
 def touch_control_keyboard(x, y, action):
-    if (action == "ACTION_DOWN" or "ACTION_MOVE") and y < 250:
-        if action == "ACTION_MOVE":
-            pass
-        else:
-            # print("press s")
-            keyboard.press("s")
-    if (action == "ACTION_DOWN" or "ACTION_MOVE") and y > 2000:
-        if action == "ACTION_MOVE":
-            pass
-        else:
-            # print("press w")
-            keyboard.press("w")
-    if action == "ACTION_UP":
-        # print("release w")
-        keyboard.release("w")
+    press_s = (action in {"ACTION_DOWN", "ACTION_MOVE"}) and y < 250
+    press_w = (action in {"ACTION_DOWN", "ACTION_MOVE"}) and y > 2000
+
+    if press_s:
+        keyboard.press("s")
+    else:
         keyboard.release("s")
 
+    if press_w:
+        keyboard.press("w")
+    else:
+        keyboard.release("w")
+
     # print("x = ", x, "y = ", y, "action = ", action)
-
-
-# @lru_cache(maxsize=None)
-# def touch_control_keyboard(x, y, action):
-#     if action in ["ACTION_DOWN", "ACTION_MOVE"]:
-#         if y < 250:
-#             keyboard.press("s")
-#         elif y > 2000:
-#             keyboard.press("w")
-#         else:
-#             keyboard.release("w")
-#             keyboard.release("s")
-
-#     # print("x = ", x, "y = ", y, "action = ", action)
 
 
 class Sensor:
@@ -149,15 +133,23 @@ class TouchSensor:
 # Function to process messages from the queue
 def process_messages():
     while True:
-        x, y, z = message_queue.get()
-        control_gamepad(x, y, z)
+        try:
+            x, y, z = message_queue.get_nowait()
+            control_gamepad(x, y, z)
+        except queue.Empty:
+            # No items in the queue, sleep briefly to avoid busy-wait
+            time.sleep(0.01)
 
 
 # Function to process touch messages from the queue
 def process_touch_messages():
     while True:
-        x, y, action = touch_message_queue.get()
-        touch_control_keyboard(x, y, action)
+        try:
+            x, y, action = touch_message_queue.get_nowait()
+            touch_control_keyboard(x, y, action)
+        except queue.Empty:
+            # No items in the queue, sleep briefly to avoid busy-wait
+            time.sleep(0.01)
 
 
 if __name__ == "__main__":
