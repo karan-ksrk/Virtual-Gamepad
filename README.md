@@ -1,4 +1,4 @@
-**Step 1 -** Download the vritual gamepad driver.  
+**Step 1 -** Download the virtual gamepad driver.  
 Under the hood, `vgamepad` uses the [ViGEm](https://github.com/ViGEm) C++ framework, for which it essentially provides python bindings and a user-friendly interface.
 Thus far, `vgamepad` is compatible with Windows only.
 
