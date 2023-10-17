@@ -7,7 +7,7 @@ Thus far, `vgamepad` is compatible with Windows only.
 Note: let me know if their is similar app exist for ios.
 
 **Step 3 -** update ip and port that you copied from android
-![](file:///ip_port.jpg)
+![](ip_port.jpg)
 
 **Step 4 -** Run command
 
@@ -17,4 +17,4 @@ Note: let me know if their is similar app exist for ios.
 
 Taadaaaa! you have brand new controller, but its virtual.
 
-![](file:///giphy.gif)
+![](giphy.gif)
