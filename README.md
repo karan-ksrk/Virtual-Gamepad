@@ -6,7 +6,7 @@ Thus far, `vgamepad` is compatible with Windows only.
 
 Note: let me know if their is similar app exist for ios.
 
-**Step 3 -** update ip and port that you copied from android
+**Step 3 -** update ip and port that you copied from android in xbox-sensor.py file
 ![](ip_port.jpg)
 
 **Step 4 -** Run command
